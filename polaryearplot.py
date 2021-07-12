@@ -43,6 +43,7 @@ from tqdm.auto import tqdm
 
 rs = np.array([])
 thetas = np.array([])
+points = None
 current_year = 0
 current_day = 0
 
@@ -155,10 +156,11 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
 
     def init():
         """Init"""
-        global rs, thetas
+        global rs, thetas, points
 
         rs = np.array([])
         thetas = np.array([])
+        points = np.array([])
 
         line.set_segments([])
         title.set_text('')
@@ -166,7 +168,7 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
 
     def animate(t):
         """Animate"""
-        global rs, thetas, current_year, current_day
+        global rs, thetas, current_year, current_day, points
 
         if t < data_len:
 
@@ -196,7 +198,13 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
 
             thetas = np.append(thetas, theta)
 
-            points = np.array([thetas, rs]).T.reshape(-1, 1, 2)
+            if (len(points) == 0):
+                points = np.array([[[theta, r]]])
+            else:
+                points = np.concatenate((points, np.array([[[theta, r]]])))
+
+            # points = np.array([thetas, rs]).T.reshape(-1, 1, 2)
+
             segments = np.concatenate([points[:-1], points[1:]], axis=1)
 
             title.set_text(date_str)
@@ -222,6 +230,8 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
     writervideo = animation.FFMpegWriter(fps=60)
     output_filename = os.path.join(output_dir, output_file)
     ani.save(output_filename, dpi=200, writer=writervideo)
+
+    fig.savefig(os.path.join(output_dir, output_file+".png"), dpi=200)
 
     pbar.set_description("Done", refresh=True)
 
