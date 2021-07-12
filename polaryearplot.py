@@ -75,7 +75,7 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
     ax.set_theta_direction(-1)
     ax.set_theta_offset(np.pi / 2.0)
 
-    marker, = ax.plot([], [], '.', alpha=.001, ms=10, mfc='black')
+    marker, = ax.plot([], [], '.', color='black')
     line = collections.LineCollection(
         [],
         linewidth=5,
@@ -210,12 +210,11 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
             title.set_text(date_str)
             line.set_segments(segments)
             line.set_array(rs)
-            marker.set_data(thetas, rs)
+            marker.set_data([theta], [r])
         else:
             pbar.set_description("Saving...", refresh=True)
 
         return line, title
-
 
     ani = animation.FuncAnimation(
         fig,
@@ -238,4 +237,4 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
     pbar.close()
 
 if __name__ == "__main__":
-    create_max_temp_graphic(input_file="seatac.csv", output_file="output.mp4")
+    create_max_temp_graphic(input_file="seatac.csv", output_file="seatac.mp4")
