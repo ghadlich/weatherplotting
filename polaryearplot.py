@@ -75,11 +75,18 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     ax.set_theta_direction(-1)
     ax.set_theta_offset(np.pi / 2.0)
 
+    # Put a circle in the middle
+    circle = plt.Circle((0, 0), min_temp-min_temp_rounded-1, transform=ax.transData._b, color="white")
+    ax.add_artist(circle)
+
+    # This is the moving dot
     marker, = ax.plot([], [], '.', color='black')
+
+    # This is the thermal line
     line = collections.LineCollection(
         [],
         linewidth=5,
-        alpha=.5,
+        alpha=.75,
         cmap=plt.get_cmap('coolwarm'),
         norm=plt.Normalize(
             min_temp,
