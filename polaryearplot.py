@@ -231,7 +231,7 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
                     if len(_year_plot_all_points) == 0:
                         _year_plot_all_points = _year_plot_current_points
                     else:
-                        _year_plot_all_points = np.concatenate(_year_plot_all_points, _year_plot_current_points)
+                        _year_plot_all_points = np.concatenate((_year_plot_all_points, _year_plot_current_points))
 
                     # Calculate the background line
                     segments = np.concatenate([_year_plot_all_points[:-1], _year_plot_all_points[1:]], axis=1)
@@ -301,5 +301,5 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
 
 if __name__ == "__main__":
     create_max_temp_graphic(caption='Seattle Daily High Temperatures (1948-2021)',
-                            input_file="seatac.csv",
+                            input_file="seatac2020.csv",
                             output_file="seatac.mp4")
