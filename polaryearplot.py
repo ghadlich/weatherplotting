@@ -47,7 +47,7 @@ points = None
 current_year = 0
 current_day = 0
 
-def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir="output", output_file="output.mp4"):
+def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", input_file="seatac.csv", output_dir="output", output_file="output.mp4"):
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -61,6 +61,7 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
     # Interpolate for any missing days
     data = data.interpolate()
 
+    # Set Up Plot Limits
     min_temp = np.min(data["TMAX"])
     min_temp_rounded = 5 * round((min_temp-15)/5)
 
@@ -88,7 +89,7 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
     title = ax.text(-0.11, 0.0, '', fontsize=20, transform=ax.transAxes)
     caption1 = ax.text(-0.11,
                     1.1,
-                    'Seattle Daily High Temperatures',
+                    caption,
                     fontsize=20,
                     transform=ax.transAxes)
     caption2 = ax.text(-0.11,
@@ -136,20 +137,29 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
     ax.xaxis.set_tick_params(pad=10)
     #ax.yaxis.set_tick_params(pad=45)
 
-    # Set Up Outer Boundary
-    ax.annotate(f"{int(max_temp)}$^\circ$F", 
-                xy=((2.0 * np.pi * 135/360), max_temp), 
-                xytext=((2.0 * np.pi * 135/360), max_temp_rounded+15), 
-                ha='center', 
+    # Set Up Outer Boundary Note
+    ax.annotate(f"{int(max_temp)}$^\circ$F",
+                xy=((2.0 * np.pi * 135/360), max_temp),
+                xytext=((2.0 * np.pi * 135/360), max_temp_rounded+15),
+                ha='center',
                 va='center',
                 fontsize=15,
                 arrowprops={'arrowstyle': '->', 'color' : "black"})
 
-    # Set Up Inner Boundary
-    ax.annotate(f"{int(min_temp)}$^\circ$F", 
-                xy=((2.0 * np.pi * 135/360), min_temp), 
-                xytext=(0, min_temp_rounded), 
-                ha='center', 
+    # Set Up Inner Boundary Note
+    ax.annotate(f"{int(min_temp)}$^\circ$F",
+                xy=((2.0 * np.pi * 135/360), min_temp),
+                xytext=(0, min_temp_rounded),
+                ha='center',
+                va='center',
+                fontsize=15,
+                arrowprops={'arrowstyle': '->', 'color' : "black"})
+
+    # Set Up Outer Tick Boundary Note
+    ax.annotate(f"{int(yticks[-3])}$^\circ$F",
+                xy=((2.0 * np.pi * 103/360), yticks[-3]),
+                xytext=((2.0 * np.pi * 103/360), max_temp_rounded+15),
+                ha='center',
                 va='center',
                 fontsize=15,
                 arrowprops={'arrowstyle': '->', 'color' : "black"})
@@ -226,9 +236,13 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
 
     pbar = tqdm(total=len(data), position=0, leave=True, desc="Parsing Data")
 
-    writervideo = animation.FFMpegWriter(fps=60)
     output_filename = os.path.join(output_dir, output_file)
-    ani.save(output_filename, dpi=200, writer=writervideo)
+
+    if (".mp4" in output_filename):
+        writervideo = animation.FFMpegWriter(fps=60)
+        ani.save(output_filename, dpi=200, writer=writervideo)
+    elif (".gif" in output_filename):
+        ani.save(output_filename, dpi=200, fps=60)
 
     fig.savefig(os.path.join(output_dir, output_file+".png"), dpi=200)
 
@@ -237,4 +251,6 @@ def create_max_temp_graphic(data_dir="data", input_file="seatac.csv", output_dir
     pbar.close()
 
 if __name__ == "__main__":
-    create_max_temp_graphic(input_file="seatac.csv", output_file="seatac.mp4")
+    create_max_temp_graphic(caption='Seattle Daily High Temperatures (2020-2021)',
+                            input_file="seatac2020.csv",
+                            output_file="seatac.gif")
