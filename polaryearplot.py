@@ -41,11 +41,10 @@ plt.style.use('ggplot')
 
 from tqdm.auto import tqdm
 
-rs = np.array([])
-thetas = np.array([])
-points = None
-current_year = 0
-current_day = 0
+_year_plot_rs = np.array([])
+_year_plot_current_points = None
+_year_plot_current_year = 0
+_year_plot_current_day = 0
 
 def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", input_file="seatac.csv", output_dir="output", output_file="output.mp4"):
 
@@ -166,11 +165,10 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
 
     def init():
         """Init"""
-        global rs, thetas, points
+        global _year_plot_rs, _year_plot_current_points
 
-        rs = np.array([])
-        thetas = np.array([])
-        points = np.array([])
+        _year_plot_rs = np.array([])
+        _year_plot_current_points = np.array([])
 
         line.set_segments([])
         title.set_text('')
@@ -178,7 +176,7 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
 
     def animate(t):
         """Animate"""
-        global rs, thetas, current_year, current_day, points
+        global _year_plot_rs, _year_plot_current_year, _year_plot_current_day, _year_plot_current_points
 
         if t < data_len:
 
@@ -187,39 +185,35 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
 
             year = date_str.split("-")[0]
 
-            if (year != current_year):
-                current_year = year
-                current_day = 0
+            if (year != _year_plot_current_year):
+                _year_plot_current_year = year
+                _year_plot_current_day = 0
 
             pbar.update(1)
             pbar.set_description(date_str, refresh=True)
 
             r = data["TMAX"][t]
-            rs = np.append(rs, r)
+            _year_plot_rs = np.append(_year_plot_rs, r)
 
             # Handle Leap Days
             if ("-02-29" in date_str):
-                theta = 2.0 * np.pi * ((current_day-0.5)/365)
-                current_day -= 1
+                theta = 2.0 * np.pi * ((_year_plot_current_day-0.5)/365)
+                _year_plot_current_day -= 1
             else:
-                theta = 2.0 * np.pi * (current_day/365)
+                theta = 2.0 * np.pi * (_year_plot_current_day/365)
 
-            current_day += 1
+            _year_plot_current_day += 1
 
-            thetas = np.append(thetas, theta)
-
-            if (len(points) == 0):
-                points = np.array([[[theta, r]]])
+            if (len(_year_plot_current_points) == 0):
+                _year_plot_current_points = np.array([[[theta, r]]])
             else:
-                points = np.concatenate((points, np.array([[[theta, r]]])))
+                _year_plot_current_points = np.concatenate((_year_plot_current_points, np.array([[[theta, r]]])))
 
-            # points = np.array([thetas, rs]).T.reshape(-1, 1, 2)
-
-            segments = np.concatenate([points[:-1], points[1:]], axis=1)
+            segments = np.concatenate([_year_plot_current_points[:-1], _year_plot_current_points[1:]], axis=1)
 
             title.set_text(date_str)
             line.set_segments(segments)
-            line.set_array(rs)
+            line.set_array(_year_plot_rs)
             marker.set_data([theta], [r])
         else:
             pbar.set_description("Saving...", refresh=True)
@@ -253,4 +247,4 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
 if __name__ == "__main__":
     create_max_temp_graphic(caption='Seattle Daily High Temperatures (2020-2021)',
                             input_file="seatac2020.csv",
-                            output_file="seatac.gif")
+                            output_file="seatac.mp4")
