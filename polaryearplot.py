@@ -42,11 +42,13 @@ plt.style.use('ggplot')
 from tqdm.auto import tqdm
 
 _year_plot_rs = np.array([])
+_year_plot_rs_all = np.array([])
 _year_plot_current_points = None
+_year_plot_all_points = None
 _year_plot_current_year = 0
 _year_plot_current_day = 0
 
-def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", input_file="seatac.csv", output_dir="output", output_file="output.mp4"):
+def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", input_file="seatac.csv", output_dir="output", output_file="output.mp4", gray_out_bg=True):
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -82,15 +84,41 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     # This is the moving dot
     marker, = ax.plot([], [], '.', color='black')
 
-    # This is the thermal line
+    # Set up Segments
+    norm=plt.Normalize(
+                min_temp,
+                max_temp)
+    cvals  = [min_temp, (max_temp-min_temp)/2, max_temp]
+
+    if gray_out_bg:
+        colors = ["silver","silver","silver"]
+    else:
+        colors = ["blue", "mediumslateblue", "red"]
+
+    tuples = list(zip(map(norm,cvals), colors))
+    cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", tuples)
+
+    # This is the background line
+    bg = collections.LineCollection(
+        [],
+        linewidth=5,
+        alpha=.75,
+        cmap=cmap,
+        norm=norm)
+    ax.add_collection(bg)
+
+    # This is the current year line
+    colors = ["blue", "mediumslateblue", "red"]
+
+    tuples = list(zip(map(norm,cvals), colors))
+    cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", tuples)
+
     line = collections.LineCollection(
         [],
         linewidth=5,
         alpha=.75,
-        cmap=plt.get_cmap('coolwarm'),
-        norm=plt.Normalize(
-            min_temp,
-            max_temp))
+        cmap=cmap,
+        norm=norm)
     ax.add_collection(line)
     title = ax.text(-0.11, 0.0, '', fontsize=20, transform=ax.transAxes)
     caption1 = ax.text(-0.11,
@@ -172,18 +200,21 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
 
     def init():
         """Init"""
-        global _year_plot_rs, _year_plot_current_points
+        global _year_plot_rs, _year_plot_rs_all, _year_plot_current_points, _year_plot_all_points
 
         _year_plot_rs = np.array([])
+        _year_plot_rs_all = np.array([])
         _year_plot_current_points = np.array([])
+        _year_plot_all_points = np.array([])
 
         line.set_segments([])
+        bg.set_segments([])
         title.set_text('')
         return line, title
 
     def animate(t):
         """Animate"""
-        global _year_plot_rs, _year_plot_current_year, _year_plot_current_day, _year_plot_current_points
+        global _year_plot_rs, _year_plot_rs_all, _year_plot_current_year, _year_plot_current_day, _year_plot_current_points, _year_plot_all_points
 
         if t < data_len:
 
@@ -195,6 +226,23 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
             if (year != _year_plot_current_year):
                 _year_plot_current_year = year
                 _year_plot_current_day = 0
+
+                if len(_year_plot_current_points) > 0:
+                    if len(_year_plot_all_points) == 0:
+                        _year_plot_all_points = _year_plot_current_points
+                    else:
+                        _year_plot_all_points = np.concatenate(_year_plot_all_points, _year_plot_current_points)
+
+                    # Calculate the background line
+                    segments = np.concatenate([_year_plot_all_points[:-1], _year_plot_all_points[1:]], axis=1)
+                    _year_plot_rs_all = np.append(_year_plot_rs_all, _year_plot_rs)
+                    bg.set_segments(segments)
+                    bg.set_array(_year_plot_rs_all)
+
+                    # Reset the current line
+                    _year_plot_current_points = np.array([])
+                    _year_plot_rs = np.array([])
+                    line.set_segments([])
 
             pbar.update(1)
             pbar.set_description(date_str, refresh=True)
@@ -225,7 +273,7 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
         else:
             pbar.set_description("Saving...", refresh=True)
 
-        return line, title
+        return line, bg, title
 
     ani = animation.FuncAnimation(
         fig,
@@ -252,6 +300,6 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     pbar.close()
 
 if __name__ == "__main__":
-    create_max_temp_graphic(caption='Seattle Daily High Temperatures (2020-2021)',
-                            input_file="seatac2020.csv",
+    create_max_temp_graphic(caption='Seattle Daily High Temperatures (1948-2021)',
+                            input_file="seatac.csv",
                             output_file="seatac.mp4")
