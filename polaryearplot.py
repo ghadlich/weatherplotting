@@ -90,10 +90,12 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
                 max_temp)
     cvals  = [min_temp, (max_temp-min_temp)/2, max_temp]
 
-    if gray_out_bg:
+    tempcolors = ["blue", "mediumslateblue", "red"]
+
+    if gray_out_bg == True:
         colors = ["silver","silver","silver"]
     else:
-        colors = ["blue", "mediumslateblue", "red"]
+        colors = tempcolors
 
     tuples = list(zip(map(norm,cvals), colors))
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", tuples)
@@ -108,9 +110,7 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     ax.add_collection(bg)
 
     # This is the current year line
-    colors = ["blue", "mediumslateblue", "red"]
-
-    tuples = list(zip(map(norm,cvals), colors))
+    tuples = list(zip(map(norm,cvals), tempcolors))
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", tuples)
 
     line = collections.LineCollection(
