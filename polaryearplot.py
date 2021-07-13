@@ -219,6 +219,7 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
         if t < data_len:
 
             # Split up year string into year, month, day
+            # TODO: Split out data specific parsing and take tuple of data.
             date_str = data["DATE"][t].strftime('%Y-%m-%d')
 
             year = date_str.split("-")[0]
@@ -300,6 +301,6 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     pbar.close()
 
 if __name__ == "__main__":
-    create_max_temp_graphic(caption='Seattle Daily High Temperatures (1948-2021)',
-                            input_file="seatac2020.csv",
-                            output_file="seatac.mp4")
+    create_max_temp_graphic(caption='Portland Oregon Daily High Temperatures (1950-2021)',
+                            input_file="pdx.csv",
+                            output_file="pdx.mp4")
