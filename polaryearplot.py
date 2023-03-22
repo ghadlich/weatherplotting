@@ -48,10 +48,24 @@ _year_plot_all_points = None
 _year_plot_current_year = 0
 _year_plot_current_day = 0
 
-def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", input_file="seatac.csv", output_dir="output", output_file="output.mp4", gray_out_bg=True):
+def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", input_file="seatac.csv", output_dir="output", output_file="output.mp4", target_duration_seconds=None, gray_out_bg=True):
+    """
+    Creates an animated graphic of daily maximum temperatures over time.
 
+    Args:
+        caption (str, optional): The title of the graphic. Defaults to "Daily High Temperatures".
+        data_dir (str, optional): The directory containing the input data file. Defaults to "data".
+        input_file (str, optional): The input data file in CSV format. Defaults to "seatac.csv".
+        output_dir (str, optional): The directory to save the output files. Defaults to "output".
+        output_file (str, optional): The output file name. Defaults to "output.mp4".
+        target_duration_seconds (int, optional): The target duration of mp4. Defaults to 10 seconds.
+        gray_out_bg (bool, optional): Determines if the background should be grayed out. Defaults to True.
+    """
+
+    # Create the output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
+    # Load the temperature data from the CSV file
     csv_filename = os.path.join(data_dir, input_file)
     data = pandas.read_csv(
         csv_filename,
@@ -81,10 +95,10 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     circle = plt.Circle((0, 0), min_temp-min_temp_rounded-1, transform=ax.transData._b, color="white")
     ax.add_artist(circle)
 
-    # This is the moving dot
+    # Create a moving dot on the plot
     marker, = ax.plot([], [], '.', color='black')
 
-    # Set up Segments
+    # Set up color maps for the line segments
     norm=plt.Normalize(
                 min_temp,
                 max_temp)
@@ -100,7 +114,7 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     tuples = list(zip(map(norm,cvals), colors))
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", tuples)
 
-    # This is the background line
+    # Create the background line
     bg = collections.LineCollection(
         [],
         linewidth=5,
@@ -109,7 +123,7 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
         norm=norm)
     ax.add_collection(bg)
 
-    # This is the current year line
+    # Create the current year line
     tuples = list(zip(map(norm,cvals), tempcolors))
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", tuples)
 
@@ -198,8 +212,14 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
                 fontsize=15,
                 arrowprops={'arrowstyle': '->', 'color' : "black"})
 
+############### Start Inline ###############
     def init():
-        """Init"""
+        """
+        Initializes the plot with empty arrays and text elements.
+
+        Returns:
+            tuple: A tuple containing the line, background, and title objects.
+        """
         global _year_plot_rs, _year_plot_rs_all, _year_plot_current_points, _year_plot_all_points
 
         _year_plot_rs = np.array([])
@@ -272,27 +292,49 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
             line.set_array(_year_plot_rs)
             marker.set_data([theta], [r])
         else:
-            pbar.set_description("Saving...", refresh=True)
+            pbar.update(1)
+            pbar.set_description("Finalizing...", refresh=True)
 
         return line, bg, title
+############### End Inline ###############
+
+    output_filename = os.path.join(output_dir, output_file)
+
+    # How long to pause at end
+    pause_seconds = 5
+
+    # Try to match the FPS to the requested duration
+    if (target_duration_seconds != None):
+        data_duration_seconds = target_duration_seconds - pause_seconds
+        data_frames = len(data)
+
+        if (".mp4" in output_filename):
+            fps = max(int(data_frames/data_duration_seconds), 1)
+
+        elif (".gif" in output_filename):
+            # Keep at 60, it is flaky otherwise
+            fps = 60
+    else:
+        # Default to 60 fps
+        fps = 60
+    
+    pause_frames = pause_seconds * fps
 
     ani = animation.FuncAnimation(
         fig,
         animate,
         init_func=init,
-        frames=int(len(data)) + 180,
+        frames=int(len(data)) + pause_frames, # Add in pause in the end
         blit=True,
         repeat=False)
 
-    pbar = tqdm(total=len(data), position=0, leave=True, desc="Parsing Data")
-
-    output_filename = os.path.join(output_dir, output_file)
+    pbar = tqdm(total=(len(data) + pause_frames), position=0, leave=True, desc="Parsing Data")
 
     if (".mp4" in output_filename):
-        writervideo = animation.FFMpegWriter(fps=60)
+        writervideo = animation.FFMpegWriter(fps=fps)
         ani.save(output_filename, dpi=200, writer=writervideo)
     elif (".gif" in output_filename):
-        ani.save(output_filename, dpi=200, fps=60)
+        ani.save(output_filename, dpi=200, fps=fps)
 
     fig.savefig(os.path.join(output_dir, output_file+".png"), dpi=200)
 
@@ -301,6 +343,7 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     pbar.close()
 
 if __name__ == "__main__":
-    create_max_temp_graphic(caption='Portland Oregon Daily High Temperatures (1950-2021)',
-                            input_file="pdx.csv",
-                            output_file="pdx.mp4")
+    create_max_temp_graphic(caption='Seattle Daily High Temperatures (1948-2023)',
+                            input_file="seatac.csv",
+                            output_file="seatac1948_1min.mp4",
+                            target_duration_seconds=65)
