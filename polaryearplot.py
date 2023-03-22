@@ -48,7 +48,7 @@ _year_plot_all_points = None
 _year_plot_current_year = 0
 _year_plot_current_day = 0
 
-def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", input_file="seatac.csv", output_dir="output", output_file="output.mp4", target_duration_seconds=None, gray_out_bg=True):
+def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", input_file="seatac.csv", output_dir="output", output_file="output.mp4", target_duration_seconds=None, pause_seconds=0, gray_out_bg=True):
     """
     Creates an animated graphic of daily maximum temperatures over time.
 
@@ -59,6 +59,7 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
         output_dir (str, optional): The directory to save the output files. Defaults to "output".
         output_file (str, optional): The output file name. Defaults to "output.mp4".
         target_duration_seconds (int, optional): The target duration of mp4. Defaults to 10 seconds.
+        pause_seconds (int, optional): The target pause of the animation - note this is taken out of target_duration. Defaults to 0 seconds.
         gray_out_bg (bool, optional): Determines if the background should be grayed out. Defaults to True.
     """
 
@@ -300,9 +301,6 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
 
     output_filename = os.path.join(output_dir, output_file)
 
-    # How long to pause at end
-    pause_seconds = 5
-
     # Try to match the FPS to the requested duration
     if (target_duration_seconds != None):
         data_duration_seconds = target_duration_seconds - pause_seconds
@@ -333,6 +331,15 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     if (".mp4" in output_filename):
         writervideo = animation.FFMpegWriter(fps=fps)
         ani.save(output_filename, dpi=200, writer=writervideo)
+
+        # Produce a down sampled down versions
+        if (fps > 60):
+            new_output_filename = output_filename.replace(".mp4","_60.mp4")
+            os.system(f"ffmpeg -y -i {output_filename} -filter:v fps=60 {new_output_filename}")
+        elif (fps < 60 and fps > 30):
+            new_output_filename = output_filename.replace(".mp4","_30.mp4")
+            os.system(f"ffmpeg -y -i {output_filename} -filter:v fps=30 {new_output_filename}")
+
     elif (".gif" in output_filename):
         ani.save(output_filename, dpi=200, fps=fps)
 
@@ -343,7 +350,8 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     pbar.close()
 
 if __name__ == "__main__":
-    create_max_temp_graphic(caption='Seattle Daily High Temperatures (1948-2023)',
+    create_max_temp_graphic(caption='Seattle Daily High Temperatures (1984-2023)',
                             input_file="seatac.csv",
                             output_file="seatac1948_1min.mp4",
-                            target_duration_seconds=65)
+                            target_duration_seconds=60,
+                            pause_seconds=0)
