@@ -312,10 +312,6 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
 
         if (".mp4" in output_filename):
             fps = max(int(data_frames/data_duration_seconds), 1)
-
-        elif (".gif" in output_filename):
-            # Keep at 60, it is flaky otherwise
-            fps = 60
     else:
         # Default to 60 fps
         fps = 60
@@ -340,9 +336,6 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
         if (fps >= 60):
             new_output_filename = output_filename.replace(".mp4","_60.mp4")
             os.system(f"ffmpeg -y -i {output_filename} -filter:v fps=60 {new_output_filename}")
-
-            new_cropped_filename = new_output_filename.replace(".mp4","_square.mp4")
-            os.system(f"ffmpeg -y -i {new_output_filename} -vf crop=1080:1080:0:420 -c:a copy {new_cropped_filename}")
         elif (fps < 60 and fps >= 30):
             new_output_filename = output_filename.replace(".mp4","_30.mp4")
             os.system(f"ffmpeg -y -i {output_filename} -filter:v fps=30 {new_output_filename}")
@@ -350,13 +343,20 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
             new_cropped_filename = new_output_filename.replace(".mp4","_square.mp4")
             os.system(f"ffmpeg -y -i {new_output_filename} -vf crop=1080:1080:0:420 -c:a copy {new_cropped_filename}")
         else:
-            # In this case, just produce a lower frame rate squared image
-            new_cropped_filename = output_filename.replace(".mp4","_square.mp4")
-            os.system(f"ffmpeg -y -i {output_filename} -vf crop=1080:1080:0:420 -c:a copy {new_cropped_filename}")
+            new_output_filename = output_filename
+            pass
 
+        new_output_filename_gif = new_output_filename.replace(".mp4",".gif")
+        os.system(f"ffmpeg -y -i {new_output_filename} -filter_complex \"[0:v] split [a][b];[a] palettegen [p];[b][p] paletteuse\" -loop 1 {new_output_filename_gif}")
 
-    elif (".gif" in output_filename):
-        ani.save(output_filename, dpi=dpi, fps=fps)
+        new_cropped_filename = new_output_filename.replace(".mp4","_square.mp4")
+        os.system(f"ffmpeg -y -i {new_output_filename} -vf crop=1080:1080:0:420 -c:a copy {new_cropped_filename}")
+
+        new_cropped_filename_gif = new_cropped_filename.replace(".mp4",".gif")
+        os.system(f"ffmpeg -y -i {new_cropped_filename} -filter_complex \"[0:v] split [a][b];[a] palettegen [p];[b][p] paletteuse\" -loop 1 {new_cropped_filename_gif}")
+
+    else:
+        print("Needs to be an mp4!")
 
     fig.savefig(os.path.join(output_dir, output_file+".png"), dpi=dpi)
 
@@ -365,8 +365,8 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     pbar.close()
 
 if __name__ == "__main__":
-    create_max_temp_graphic(caption='Portland Daily High Temperatures (1950-2023)',
-                            input_file="pdx.csv",
-                            output_file="pdx_1min.mp4",
+    create_max_temp_graphic(caption='Seattle Daily High Temperatures (2020-2023)',
+                            input_file="seatac2020.csv",
+                            output_file="seatac.mp4",
                             target_duration_seconds=60,
                             pause_seconds=0)
