@@ -87,8 +87,9 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
     data_len = len(data['TMAX'])
 
     # Set Up Plot Basics
-    fig = plt.figure(figsize=(9, 9))
-    ax = fig.add_subplot(1, 1, 1, projection='polar')
+    dpi = 200
+    fig = plt.figure(figsize=(1080/dpi, 1920/dpi), dpi=200)
+    ax = plt.axes(projection = 'polar')
     ax.set_theta_direction(-1)
     ax.set_theta_offset(np.pi / 2.0)
 
@@ -135,14 +136,15 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
         cmap=cmap,
         norm=norm)
     ax.add_collection(line)
-    title = ax.text(-0.11, 0.0, '', fontsize=20, transform=ax.transAxes)
+    title = ax.text(-0.11, 1.11, '', fontsize=14, transform=ax.transAxes)
     caption1 = ax.text(-0.11,
-                    1.1,
+                    1.18,
                     caption,
-                    fontsize=20,
-                    transform=ax.transAxes)
+                    fontsize=12,
+                    transform=ax.transAxes,
+                    weight="bold")
     caption2 = ax.text(-0.11,
-                    1.025,
+                    -0.19,
                     'Source: https://www.ncdc.noaa.gov/\n'
                     'GitHub: https://github.com/ghadlich/weatherplotting',
                     fontsize=10,
@@ -212,6 +214,8 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
                 va='center',
                 fontsize=15,
                 arrowprops={'arrowstyle': '->', 'color' : "black"})
+
+    plt.subplots_adjust(left=0.15,right = 0.85)
 
 ############### Start Inline ###############
     def init():
@@ -330,28 +334,39 @@ def create_max_temp_graphic(caption="Daily High Temperatures", data_dir="data", 
 
     if (".mp4" in output_filename):
         writervideo = animation.FFMpegWriter(fps=fps)
-        ani.save(output_filename, dpi=200, writer=writervideo)
+        ani.save(output_filename, dpi=dpi, writer=writervideo)
 
-        # Produce a down sampled down versions
-        if (fps > 60):
+        # Produce a standard down sampled and square versions
+        if (fps >= 60):
             new_output_filename = output_filename.replace(".mp4","_60.mp4")
             os.system(f"ffmpeg -y -i {output_filename} -filter:v fps=60 {new_output_filename}")
-        elif (fps < 60 and fps > 30):
+
+            new_cropped_filename = new_output_filename.replace(".mp4","_square.mp4")
+            os.system(f"ffmpeg -y -i {new_output_filename} -vf crop=1080:1080:0:420 -c:a copy {new_cropped_filename}")
+        elif (fps < 60 and fps >= 30):
             new_output_filename = output_filename.replace(".mp4","_30.mp4")
             os.system(f"ffmpeg -y -i {output_filename} -filter:v fps=30 {new_output_filename}")
 
-    elif (".gif" in output_filename):
-        ani.save(output_filename, dpi=200, fps=fps)
+            new_cropped_filename = new_output_filename.replace(".mp4","_square.mp4")
+            os.system(f"ffmpeg -y -i {new_output_filename} -vf crop=1080:1080:0:420 -c:a copy {new_cropped_filename}")
+        else:
+            # In this case, just produce a lower frame rate squared image
+            new_cropped_filename = output_filename.replace(".mp4","_square.mp4")
+            os.system(f"ffmpeg -y -i {output_filename} -vf crop=1080:1080:0:420 -c:a copy {new_cropped_filename}")
 
-    fig.savefig(os.path.join(output_dir, output_file+".png"), dpi=200)
+
+    elif (".gif" in output_filename):
+        ani.save(output_filename, dpi=dpi, fps=fps)
+
+    fig.savefig(os.path.join(output_dir, output_file+".png"), dpi=dpi)
 
     pbar.set_description("Done", refresh=True)
 
     pbar.close()
 
 if __name__ == "__main__":
-    create_max_temp_graphic(caption='Seattle Daily High Temperatures (1984-2023)',
-                            input_file="seatac.csv",
-                            output_file="seatac1948_1min.mp4",
+    create_max_temp_graphic(caption='Portland Daily High Temperatures (1950-2023)',
+                            input_file="pdx.csv",
+                            output_file="pdx_1min.mp4",
                             target_duration_seconds=60,
                             pause_seconds=0)
